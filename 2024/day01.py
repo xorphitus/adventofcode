@@ -22,7 +22,7 @@ def exec(lines):
         if diff < 0:
             diff *= -1
         sum += diff
-    return diff
+    return sum
 
 # cat /path/to/input.txt | python day01.py
 if __name__ == '__main__':
