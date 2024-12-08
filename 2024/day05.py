@@ -1,5 +1,5 @@
 import sys
-from collections import deque
+from collections import defaultdict
 
 def parse(lines):
     isDependencyPart = True
@@ -11,61 +11,66 @@ def parse(lines):
             if line == "":
                 isDependencyPart = False
                 continue
-            before, after = line.split("|")
-            deps.append([before, after])
+            pre, post = line.split("|")
+            deps.append([pre, post])
         else:
             pages.append(line.split(","))
     return deps, pages
 
-def makeGraph(deps):
-    graph = {}
-    for dep in deps:
-        before, after = dep
-        if before not in graph:
-            graph[before] = []
-        graph[before].append(after)
+def makeGraph(deps, pages):
+    pageSet = set()
+    for page in pages:
+        pageSet.add(page)
+
+    graph = defaultdict(list)
+    for pre, post in deps:
+        if pre in pageSet and post in pageSet:
+            graph[pre].append(post)
     return graph
 
 def topologicalSort(graph):
-    seen = set()
-    order = []
-    for val, nexts in graph.items():
-        if val in seen:
-            continue
-        rec(val, graph, seen, order)
+    indigree = defaultdict(int)
+    for pre, posts in graph.items():
+        if pre not in indigree:
+            indigree[pre] = 0
+        for post in posts:
+            indigree[post] += 1
 
-    order.reverse()
-    return order
-
-def rec(val, graph, seen, order):
-    seen.add(val)
-    if val in graph:
-        for nxt in graph[val]:
-            if nxt in seen:
+    sorted = []
+    while len(indigree) > 0:
+        group = set()
+        for page, count in indigree.items():
+            if count > 0:
                 continue
-            rec(nxt, graph, seen, order)
+            group.add(page)
+        sorted.append(group)
+        for page in group:
+            for post in graph[page]:
+                indigree[post] -= 1
+            del indigree[page]
 
-    order.append(val)
+    return sorted
 
 def valid(pages, orderedDeps):
-    deps = {}
-    for i in range(len(orderedDeps)):
-        deps[orderedDeps[i]] = i
-
-    last = -1
+    idx = 0
     for page in pages:
-        idx = deps[page]
-        if idx < last:
+        found = False
+        while idx < len(orderedDeps):
+            layer = orderedDeps[idx]
+            if page in layer:
+                found = True
+                break
+            idx += 1
+        if not found:
             return False
-        last = idx
     return True
 
 def exec(deps, pageSets):
-    deps = makeGraph(deps)
-    deps = topologicalSort(deps)
     total = 0
     for pages in pageSets:
-        if valid(pages, deps):
+        graph = makeGraph(deps, pages)
+        sortedDeps = topologicalSort(graph)
+        if valid(pages, sortedDeps):
             middle = pages[len(pages) // 2]
             total += int(middle)
     return total
