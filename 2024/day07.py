@@ -1,5 +1,4 @@
 import sys
-from collections import deque
 
 def parse(lines):
     formulas = []
@@ -12,16 +11,16 @@ def parse(lines):
 
 
 def valid(test, nums):
-    q = deque()
-    q.append([0, nums[0]])
-    while q:
-        i, val = q.popleft()
+    stack = []
+    stack.append([0, nums[0]])
+    while stack:
+        i, val = stack.pop()
         if val > test:
             continue
         i += 1
         if i < len(nums):
-            q.append([i, val * nums[i]])
-            q.append([i, val + nums[i]])
+            stack.append([i, val * nums[i]])
+            stack.append([i, val + nums[i]])
         elif val == test:
             return True
     return False
